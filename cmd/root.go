@@ -21,8 +21,10 @@ func Execute() {
 }
 
 // Flag Global Values
-var Auth, System bool
-var AlbumId int
+var (
+	Auth, System bool
+	AlbumId      int
+)
 
 func init() {
 	cobra.OnInitialize()
