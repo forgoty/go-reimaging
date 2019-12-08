@@ -15,7 +15,7 @@ func validatePath(path string) (string, error) {
 	path = getAbsPath(path)
 
 	if res, err := isDir(path); err != nil || res != true {
-		return "", errors.New("Giving Path is not valid")
+		return "", errors.New("Error: Giving Path is not valid")
 	}
 
 	return path, nil

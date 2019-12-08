@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strconv"
 
 	"github.com/spf13/cobra"
@@ -13,9 +14,24 @@ import (
 var downloadCmd = &cobra.Command{
 	Use:   "download USERID",
 	Short: "Download photo albums of specific user",
-	Args:  cobra.ExactArgs(1),
+	Args: func(cmd *cobra.Command, args []string) error {
+		if len(args) != 1 {
+			return errors.New("More then one argument provided")
+		}
+
+		_, error := strconv.Atoi(args[0])
+		if error != nil {
+			return errors.New("Unvalid USERID has been provided. Need Integer")
+		}
+
+		return nil
+	},
 	Run: func(cmd *cobra.Command, args []string) {
-		download(args)
+		error := download(args)
+		if error != nil {
+			cmd.PrintErrln(error)
+			os.Exit(1)
+		}
 	},
 }
 
@@ -30,16 +46,14 @@ func init() {
 	downloadCmd.Flags().StringVarP(&path, "path", "p", "", "Set Download Folder")
 }
 
-func download(args []string) {
-	userId, error := strconv.Atoi(args[0])
-	if error != nil {
-		panic(errors.New("Unvalid USERID has been provided. Need Integer"))
-	}
+func download(args []string) error {
+	userId, _ := strconv.Atoi(args[0])
 	fmt.Println("download called with", userId)
 
 	validPath, error := validators.ValidateDownloadDir(path)
 	if error != nil {
-		panic(error)
+		return error
 	}
 	fmt.Println("Path:", validPath)
+	return nil
 }
