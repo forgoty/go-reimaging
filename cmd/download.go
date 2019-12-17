@@ -8,6 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/forgoty/go-reimaging/cmd/auth"
 	"github.com/forgoty/go-reimaging/cmd/validators"
 )
 
@@ -27,11 +28,7 @@ var downloadCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		error := download(args)
-		if error != nil {
-			cmd.PrintErrln(error)
-			os.Exit(1)
-		}
+		download(args)
 	},
 }
 
@@ -46,14 +43,17 @@ func init() {
 	downloadCmd.Flags().StringVarP(&path, "path", "p", "", "Set Download Folder")
 }
 
-func download(args []string) error {
-	userId, _ := strconv.Atoi(args[0])
-	fmt.Println("download called with", userId)
+func download(args []string) {
+	userId := args[0]
 
-	validPath, error := validators.ValidateDownloadDir(path)
+	_, error := validators.ValidateDownloadDir(path)
 	if error != nil {
-		return error
+		fmt.Println(error)
+		os.Exit(1)
 	}
-	fmt.Println("Path:", validPath)
-	return nil
+	vk := auth.GetClient(Auth)
+	response := GetAlbums(vk, userId)
+	for _, album := range response.Items {
+		fmt.Printf("%s(%d) - id:%d\n", album.Title, album.Size, album.ID)
+	}
 }
