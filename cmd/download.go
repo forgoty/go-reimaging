@@ -4,8 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 
+	vkapi "github.com/SevereCloud/vksdk/5.92/api"
+	object "github.com/SevereCloud/vksdk/5.92/object"
 	"github.com/spf13/cobra"
 
 	"github.com/forgoty/go-reimaging/cmd/auth"
@@ -52,8 +55,20 @@ func download(args []string) {
 		os.Exit(1)
 	}
 	vk := auth.GetClient(Auth)
-	response := GetAlbums(vk, userId)
-	for _, album := range response.Items {
-		fmt.Printf("%s(%d) - id:%d\n", album.Title, album.Size, album.ID)
+	albums := GetAlbums(vk, userId)
+	for _, album := range albums {
+		go downloadAlbum(vk, album)
+	}
+}
+
+func downloadAlbum(vk *vkapi.VK, album object.PhotosPhotoAlbumFull) error {
+	createAlbumDir(album.Title)
+	return nil
+}
+
+func createAlbumDir(title string) {
+	pathDir := filepath.Join(path, title)
+	if _, serr := os.Stat(pathDir); serr != nil {
+		os.MkdirAll(pathDir, os.ModePerm)
 	}
 }

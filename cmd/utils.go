@@ -26,17 +26,17 @@ func GetAlbums(vk *vkapi.VK, userId string) []object.PhotosPhotoAlbumFull  {
 	return response.Items
 }
 
-func GetPhotos(vk *vkapi.VK, userId, albumId, offset string) []object.PhotosPhoto {
-	params := map[string]string{
-		"album_id": albumId,
-		"owner_id":    userId,
-		"offset":    offset,
-		"photos_sizes":    "1",
-		"count":    "1000",
-	}
-	response, vkErr := vk.PhotosGet(params)
-	if vkErr.Code != 0 {
-		fmt.Println(vkErr.Message)
-	}
-	return response.Items
-}
+// func GetPhotos(vk *vkapi.VK, userId, albumId, offset string) []object.PhotosPhoto {
+// 	params := map[string]string{
+// 		"album_id": albumId,
+// 		"owner_id":    userId,
+// 		"offset":    offset,
+// 		"photos_sizes":    "1",
+// 		"count":    "1000",
+// 	}
+// 	response, vkErr := vk.PhotosGet(params)
+// 	if vkErr.Code != 0 {
+// 		fmt.Println(vkErr.Message)
+// 	}
+// 	return response.Items
+// }
