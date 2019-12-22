@@ -40,8 +40,8 @@ func list(args []string) {
 	userId := args[0]
 	vk := auth.GetClient(Auth)
 
-	response := GetAlbums(vk, userId)
-	for _, album := range response.Items {
+	albums := GetAlbums(vk, userId)
+	for _, album := range albums {
 		fmt.Printf("%s(%d) - id:%d\n", album.Title, album.Size, album.ID)
 	}
 }
