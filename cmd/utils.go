@@ -2,12 +2,20 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	vkapi "github.com/SevereCloud/vksdk/5.92/api"
 	object "github.com/SevereCloud/vksdk/5.92/object"
+	"os"
+	"strconv"
 )
 
-func GetAlbums(vk *vkapi.VK, userId string) []object.PhotosPhotoAlbumFull  {
+type PhotoSize struct {
+	Height int
+	URL    string
+	Type   string
+	Width  int
+}
+
+func GetAlbums(vk *vkapi.VK, userId string) []object.PhotosPhotoAlbumFull {
 	var needSystem string
 	if System {
 		needSystem = "1"
@@ -26,17 +34,25 @@ func GetAlbums(vk *vkapi.VK, userId string) []object.PhotosPhotoAlbumFull  {
 	return response.Items
 }
 
-// func GetPhotos(vk *vkapi.VK, userId, albumId, offset string) []object.PhotosPhoto {
-// 	params := map[string]string{
-// 		"album_id": albumId,
-// 		"owner_id":    userId,
-// 		"offset":    offset,
-// 		"photos_sizes":    "1",
-// 		"count":    "1000",
-// 	}
-// 	response, vkErr := vk.PhotosGet(params)
-// 	if vkErr.Code != 0 {
-// 		fmt.Println(vkErr.Message)
-// 	}
-// 	return response.Items
-// }
+func GetPhotoUrls(vk *vkapi.VK, userId, albumId, offsetInt int) []string {
+	userID := strconv.Itoa(userId)
+	albumID := strconv.Itoa(albumId)
+	offset := strconv.Itoa(offsetInt)
+	params := map[string]string{
+		"album_id":     albumID,
+		"owner_id":     userID,
+		"offset":       offset,
+		"photos_sizes": "1",
+		"count":        "1000",
+	}
+	response, vkErr := vk.PhotosGet(params)
+	if vkErr.Code != 0 {
+		fmt.Println(vkErr.Message)
+	}
+
+	urls := []string{}
+	for _, photo := range response.Items {
+		urls = append(urls, PhotoSize(photo.Sizes[len(photo.Sizes)-1]).URL)
+	}
+	return urls
+}

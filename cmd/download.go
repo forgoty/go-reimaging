@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -57,12 +58,17 @@ func download(args []string) {
 	vk := auth.GetClient(Auth)
 	albums := GetAlbums(vk, userId)
 	for _, album := range albums {
-		go downloadAlbum(vk, album)
+		downloadAlbum(vk, album)
 	}
 }
 
 func downloadAlbum(vk *vkapi.VK, album object.PhotosPhotoAlbumFull) error {
 	createAlbumDir(album.Title)
+	offsets := getOffset(album.Size)
+	photos := []string{}
+	for _, offset := range offsets {
+		photos = append(photos, GetPhotoUrls(vk, album.OwnerID, album.ID, offset)...)
+	}
 	return nil
 }
 
@@ -71,4 +77,19 @@ func createAlbumDir(title string) {
 	if _, serr := os.Stat(pathDir); serr != nil {
 		os.MkdirAll(pathDir, os.ModePerm)
 	}
+}
+
+func getOffset(size int) []int {
+	var maxCount int = 1000
+	d := float64(size) / float64(maxCount)
+	offset := int(math.Ceil(d))
+
+	offsets := make([]int, offset)
+
+	buf := 0
+	for i := 0; i < offset; i++ {
+		offsets[i] = buf
+		buf += maxCount
+	}
+	return offsets
 }
