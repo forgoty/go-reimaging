@@ -3,13 +3,17 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"io"
 	"math"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	vkapi "github.com/SevereCloud/vksdk/5.92/api"
 	object "github.com/SevereCloud/vksdk/5.92/object"
+	"github.com/schollz/progressbar"
 	"github.com/spf13/cobra"
 
 	"github.com/forgoty/go-reimaging/cmd/auth"
@@ -56,6 +60,7 @@ func download(args []string) {
 		os.Exit(1)
 	}
 	vk := auth.GetClient(Auth)
+
 	albums := GetAlbums(vk, userId)
 	for _, album := range albums {
 		downloadAlbum(vk, album)
@@ -63,20 +68,22 @@ func download(args []string) {
 }
 
 func downloadAlbum(vk *vkapi.VK, album object.PhotosPhotoAlbumFull) error {
-	createAlbumDir(album.Title)
+	pathDir := createAlbumDir(album.Title)
 	offsets := getOffset(album.Size)
-	photos := []string{}
+	photosUrls := []string{}
 	for _, offset := range offsets {
-		photos = append(photos, GetPhotoUrls(vk, album.OwnerID, album.ID, offset)...)
+		photosUrls = append(photosUrls, GetPhotoUrls(vk, album.OwnerID, album.ID, offset)...)
 	}
+	downloadPhotos(photosUrls, pathDir)
 	return nil
 }
 
-func createAlbumDir(title string) {
+func createAlbumDir(title string) string {
 	pathDir := filepath.Join(path, title)
 	if _, serr := os.Stat(pathDir); serr != nil {
 		os.MkdirAll(pathDir, os.ModePerm)
 	}
+	return pathDir
 }
 
 func getOffset(size int) []int {
@@ -92,4 +99,47 @@ func getOffset(size int) []int {
 		buf += maxCount
 	}
 	return offsets
+}
+
+func downloadPhotos(photosUrls []string, pathDir string) {
+	done := make(chan bool)
+	parallels := 0
+	for _, url := range photosUrls {
+		parallels++
+		go downloadPhoto(url, pathDir, done)
+	}
+	bar := progressbar.New(parallels)
+	for i := 0; i < parallels; i++ {
+		<-done
+		bar.Add(1)
+	}
+}
+
+func downloadPhoto(url, pathDir string, done chan bool) {
+	split := strings.Split(url, "/")
+	fileName := strings.ReplaceAll(split[len(split)-1], "-", "")
+	path := pathDir + "/" + fileName
+
+	if _, err := os.Stat(path); err == nil {
+		return
+	}
+
+	response, err := http.Get(url)
+	if err != nil {
+		fmt.Printf("Error while downloading", url)
+	}
+	defer response.Body.Close()
+
+	output, err := os.Create(path)
+	if err != nil {
+		fmt.Printf("Error while creating", fileName)
+	}
+	defer output.Close()
+
+	_, err = io.Copy(output, response.Body)
+	if err != nil {
+		fmt.Printf("Error while saving", url)
+	}
+	done <- true
+	return
 }
