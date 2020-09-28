@@ -2,8 +2,6 @@ package reimaging
 
 import (
 	"fmt"
-	vkapi "github.com/SevereCloud/vksdk/5.92/api"
-	object "github.com/SevereCloud/vksdk/5.92/object"
 	"os"
 	"strconv"
 )
