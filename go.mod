@@ -1,4 +1,4 @@
-module reimaging
+module github.com/forgoty/go-reimaging
 
 go 1.15
 

@@ -1,8 +1,8 @@
 package main
 
-import "github.com/forogty/go-reimaging/reimaging/root"
+import "github.com/forgoty/go-reimaging/reimaging"
 
 func main() {
-	root.Execute()
+	reimaging.Execute()
 
 }
