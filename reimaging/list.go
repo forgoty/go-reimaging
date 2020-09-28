@@ -36,9 +36,10 @@ func init() {
 
 func list(args []string) {
 	userId := args[0]
+	fmt.Println(userId)
 
-	albums := GetAlbums(vk, userId)
-	for _, album := range albums {
-		fmt.Printf("%s(%d) - id:%d\n", album.Title, album.Size, album.ID)
-	}
+	// albums := GetAlbums(vk, userId)
+	// for _, album := range albums {
+	// 	fmt.Printf("%s(%d) - id:%d\n", album.Title, album.Size, album.ID)
+	// }
 }

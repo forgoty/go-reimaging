@@ -7,7 +7,7 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:     "go-reimaging",
+	Use:     "reimaging",
 	Version: "0.1",
 	Short:   "Simple photo downloader/uploader for vk.com",
 }

@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/SevereCloud/vksdk/v2/api"
+	"github.com/SevereCloud/vksdk/v2/object"
 	"github.com/schollz/progressbar"
 	"github.com/spf13/cobra"
 
@@ -56,13 +58,15 @@ func download(args []string) {
 		os.Exit(1)
 	}
 
+	vk := GetVk()
+
 	albums := GetAlbums(vk, userId)
 	for _, album := range albums {
 		downloadAlbum(vk, album)
 	}
 }
 
-func downloadAlbum(vk *vkapi.VK, album object.PhotosPhotoAlbumFull) error {
+func downloadAlbum(vk *api.VK, album object.PhotosPhotoAlbumFull) error {
 	pathDir := createAlbumDir(album.Title)
 	offsets := getOffset(album.Size)
 	photosUrls := []string{}
