@@ -1,4 +1,4 @@
-package cmd
+package reimaging
 
 import (
 	"errors"
@@ -11,13 +11,10 @@ import (
 	"strconv"
 	"strings"
 
-	vkapi "github.com/SevereCloud/vksdk/5.92/api"
-	object "github.com/SevereCloud/vksdk/5.92/object"
 	"github.com/schollz/progressbar"
 	"github.com/spf13/cobra"
 
-	"github.com/forgoty/go-reimaging/cmd/auth"
-	"github.com/forgoty/go-reimaging/cmd/validators"
+	"github.com/forgoty/go-reimaging/reimaging/validators"
 )
 
 var downloadCmd = &cobra.Command{
@@ -45,7 +42,6 @@ var path string
 func init() {
 	rootCmd.AddCommand(downloadCmd)
 
-	downloadCmd.Flags().BoolVarP(&Auth, "auth", "a", false, "Enable authorization")
 	downloadCmd.Flags().BoolVarP(&System, "system", "s", false, "Enable system albums for download")
 	downloadCmd.Flags().IntVarP(&AlbumId, "album-id", "", 0, "Use specific album ID to download")
 	downloadCmd.Flags().StringVarP(&path, "path", "p", "", "Set Download Folder")
@@ -59,7 +55,6 @@ func download(args []string) {
 		fmt.Println(error)
 		os.Exit(1)
 	}
-	vk := auth.GetClient(Auth)
 
 	albums := GetAlbums(vk, userId)
 	for _, album := range albums {

@@ -1,4 +1,4 @@
-package cmd
+package reimaging
 
 import (
 	"os"
@@ -20,8 +20,8 @@ func Execute() {
 
 // Flag Global Values
 var (
-	Auth, System bool
-	AlbumId      int
+	System  bool
+	AlbumId int
 )
 
 func init() {
