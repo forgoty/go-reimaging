@@ -1,11 +1,10 @@
-package cmd
+package reimaging
 
 import (
 	"errors"
 	"fmt"
 	"strconv"
 
-	"github.com/forgoty/go-reimaging/cmd/auth"
 	"github.com/spf13/cobra"
 )
 
@@ -32,13 +31,11 @@ var listCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(listCmd)
 
-	listCmd.Flags().BoolVarP(&Auth, "auth", "a", false, "Enable authorization")
 	listCmd.Flags().BoolVarP(&System, "system", "s", false, "Enable system albums for download")
 }
 
 func list(args []string) {
 	userId := args[0]
-	vk := auth.GetClient(Auth)
 
 	albums := GetAlbums(vk, userId)
 	for _, album := range albums {

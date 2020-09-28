@@ -1,7 +1,7 @@
 package main
 
-import "github.com/forgoty/go-reimaging/cmd"
+import "github.com/forgoty/go-reimaging/reimaging"
 
 func main() {
-	cmd.Execute()
+	reimaging.Execute()
 }
