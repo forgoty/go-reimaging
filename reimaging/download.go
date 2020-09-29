@@ -50,7 +50,7 @@ func init() {
 }
 
 func download(args []string) {
-	userId := args[0]
+	userId, _ := strconv.Atoi(args[0])
 
 	_, error := validators.ValidateDownloadDir(path)
 	if error != nil {
