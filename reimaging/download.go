@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"sync"
+	"time"
 
 	"github.com/SevereCloud/vksdk/v2/api"
 	"github.com/SevereCloud/vksdk/v2/object"
@@ -78,19 +78,11 @@ func downloadAlbumById(vk *api.VK, userId, albumId int) {
 }
 
 func downloadAlbums(vk *api.VK, userId int) {
-	var wg sync.WaitGroup
-
 	albums := GetAlbums(vk, userId)
 	for _, album := range albums {
-		wg.Add(1)
-		go downloadAlbumWaitGroup(&wg, vk, album)
+	    downloadAlbum(vk, album)
+	    fmt.Println()
 	}
-	wg.Wait()
-}
-
-func downloadAlbumWaitGroup(wg *sync.WaitGroup, vk *api.VK, album object.PhotosPhotoAlbumFull) {
-	defer wg.Done()
-	downloadAlbum(vk, album)
 }
 
 func downloadAlbum(vk *api.VK, album object.PhotosPhotoAlbumFull) {
@@ -136,30 +128,44 @@ type metaDownloadedPhoto struct {
 
 func downloadPhotos(photosUrls []string, pathDir, albumTitle string) {
 	photosCount := len(photosUrls)
-	done := make(chan bool, photosCount)
-	errch := make(chan error, photosCount)
+
+	done := make(chan bool, 1)
+	defer close(done)
+
+	errch := make(chan error, 1)
+	defer close(errch)
+
 	for _, url := range photosUrls {
 		metaImage := getPhotoMetaData(url, pathDir)
 		go downloadPhoto(metaImage, done, errch)
 	}
-	bar := progressbar.Default(int64(photosCount), albumTitle)
+
+	bar := getProgressBar(int64(photosCount), albumTitle)
 	for i := 0; i < photosCount; i++ {
 		if ok := <-done; !ok {
 			if err := <-errch; err != nil {
 				fmt.Println(err)
 			}
+		} else {
+			<-errch
 		}
 		bar.Add(1)
 	}
-	close(done)
-	close(errch)
 }
 
 func getPhotoMetaData(url, pathDir string) metaDownloadedPhoto {
-	split := strings.Split(url, "/")
-	filename := strings.ReplaceAll(split[len(split)-1], "-", "")
+	filename := getFileName(url)
 	path := pathDir + "/" + filename
 	return metaDownloadedPhoto{url: url, filename: filename, path: path}
+}
+
+func getFileName(url string) string{
+	split := strings.Split(url, "/")
+	filename := strings.ReplaceAll(split[len(split)-1], "-", "")
+	if index := strings.Index(filename, "?"); index > 0 {
+		filename = filename[0:index]
+	}
+	return filename
 }
 
 func downloadPhoto(metaImage metaDownloadedPhoto, done chan bool, errch chan error) {
@@ -171,29 +177,70 @@ func downloadPhoto(metaImage metaDownloadedPhoto, done chan bool, errch chan err
 		return
 	}
 
-	response, err := http.Get(metaImage.url)
+	response, err := getWithRetry(metaImage.url)
+	if response != nil {
+		defer response.Body.Close()
+	}
 	if err != nil {
 		errch <- err
 		done <- false
 		return
 	}
-	defer response.Body.Close()
 
 	output, err := os.Create(metaImage.path)
+	if output != nil {
+		defer output.Close()
+	}
 	if err != nil {
 		errch <- err
 		done <- false
 		return
 	}
-	defer output.Close()
-
 	_, err = io.Copy(output, response.Body)
 	if err != nil {
 		errch <- err
 		done <- false
 		return
 	}
-	done <- true
 	errch <- nil
+	done <- true
 	return
+}
+
+func getWithRetry(url string) (*http.Response, error) {
+	var (
+		err error
+		response *http.Response
+		retries int = 3
+	)
+	for retries > 0 {
+		response, err = http.Get(url)
+		if err != nil {
+			retries -= 1
+			time.Sleep(5 * time.Millisecond)
+		} else {
+			break
+		}
+	}
+	return response, err
+}
+
+func getProgressBar(max int64, title string) *progressbar.ProgressBar {
+	theme := progressbar.Theme{
+		Saucer: "=",
+		SaucerHead: ">",
+		SaucerPadding: " ",
+		BarStart: "[",
+		BarEnd: "]",
+	}
+	return progressbar.NewOptions64(
+		max,
+		progressbar.OptionShowIts(),
+		progressbar.OptionSetItsString("photos"),
+		progressbar.OptionSetDescription(title),
+		progressbar.OptionSetPredictTime(true),
+		progressbar.OptionShowCount(),
+		progressbar.OptionSetTheme(theme),
+	)
+
 }

@@ -36,7 +36,10 @@ func GetPhotoUrls(vk *api.VK, userId, albumId, offsetInt int) []string {
 
 	urls := []string{}
 	for _, photo := range response.Items {
-		urls = append(urls, photo.Sizes[len(photo.Sizes)-1].BaseImage.URL)
+		if len(photo.Sizes) > 0 {
+			// the most high-rez picture is always last
+			urls = append(urls, photo.Sizes[len(photo.Sizes)-1].BaseImage.URL)
+		}
 	}
 	return urls
 
