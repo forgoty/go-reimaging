@@ -16,8 +16,6 @@ import (
 	"github.com/SevereCloud/vksdk/v2/object"
 	progressbar "github.com/schollz/progressbar/v3"
 	"github.com/spf13/cobra"
-
-	"github.com/forgoty/go-reimaging/reimaging/validators"
 )
 
 var downloadCmd = &cobra.Command{
@@ -53,7 +51,7 @@ func init() {
 func download(args []string) {
 	userId, _ := strconv.Atoi(args[0])
 
-	_, error := validators.ValidateDownloadDir(path)
+	_, error := validateDownloadDir(path)
 	if error != nil {
 		fmt.Println(error)
 		os.Exit(1)

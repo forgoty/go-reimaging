@@ -1,4 +1,4 @@
-package validators
+package reimaging
 
 import (
 	"errors"
@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 )
 
-func ValidateDownloadDir(path string) (string, error) {
+func validateDownloadDir(path string) (string, error) {
 	path, error := validatePath(path)
 	return path, error
 }
