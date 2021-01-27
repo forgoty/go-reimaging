@@ -11,11 +11,10 @@ import (
 
 type VKWrapper struct {
 	vk *api.VK
-	UserID int
 }
 
-func NewVKWrapper(userID int) *VKWrapper {
-	return &VKWrapper{getVk(), userID}
+func NewVKWrapper() *VKWrapper {
+	return &VKWrapper{getVk()}
 }
 
 func (vkw *VKWrapper) GetPhotoURLs(album PhotoAlbum, offset int) []string {
@@ -40,9 +39,9 @@ func (vkw *VKWrapper) GetPhotoURLs(album PhotoAlbum, offset int) []string {
 	return urls
 }
 
-func (vkw *VKWrapper) GetAlbums(NeedSystem bool) []PhotoAlbum {
+func (vkw *VKWrapper) GetAlbums(userID int, NeedSystem bool) []PhotoAlbum {
 	response_params := params.NewPhotosGetAlbumsBuilder()
-	response_params.OwnerID(vkw.UserID)
+	response_params.OwnerID(userID)
 	response_params.NeedSystem(NeedSystem)
 	response, vkErr := vkw.vk.PhotosGetAlbums(response_params.Params)
 	if vkErr != nil {
@@ -65,10 +64,26 @@ func (vkw *VKWrapper) GetAlbums(NeedSystem bool) []PhotoAlbum {
 	return albums
 }
 
+func (vkw *VKWrapper) CreateAlbum(title string) PhotoAlbum{
+	response_params := params.NewPhotosCreateAlbumBuilder()
+	response_params.Title(title)
+	response_params.PrivacyView([]string{"only_me"})
+	rawAlbum, vkErr := vkw.vk.PhotosCreateAlbum(response_params.Params)
+	if vkErr != nil {
+		fmt.Println(vkErr)
+		os.Exit(1)
+	}
+
+	return PhotoAlbum{
+		ID: rawAlbum.ID,
+		OwnerID: rawAlbum.OwnerID,
+		Size: rawAlbum.Size,
+		Title: rawAlbum.Title,
+	}
+}
+
 func getVk() *api.VK {
-	token := os.Getenv("VK_TOKEN")
-	vk := api.NewVK(token)
-	return vk
+	return api.NewVK(os.Getenv("VK_TOKEN"))
 }
 
 type PhotoAlbum struct {

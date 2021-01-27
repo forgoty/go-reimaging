@@ -17,19 +17,21 @@ import (
 type AlbumDownloader struct {
 	VKWrapper *vkw.VKWrapper
 	DownloadPath string
+	UserID int
 	NeedSystem bool
 }
 
 func NewAlbumDownloader(userID int, downloadPath string, needSystem bool) *AlbumDownloader {
 	return &AlbumDownloader{
-		VKWrapper: vkw.NewVKWrapper(userID),
+		VKWrapper: vkw.NewVKWrapper(),
+		UserID: userID,
 		DownloadPath: downloadPath,
 		NeedSystem: needSystem,
 	}
 }
 
 func (ad *AlbumDownloader) DownloadAlbumByID(albumID int) {
-	albums := ad.VKWrapper.GetAlbums(ad.NeedSystem)
+	albums := ad.VKWrapper.GetAlbums(ad.UserID, ad.NeedSystem)
 	for _, album := range albums {
 		if album.ID == albumID {
 			ad.DownloadAlbum(album)
@@ -38,7 +40,7 @@ func (ad *AlbumDownloader) DownloadAlbumByID(albumID int) {
 }
 
 func (ad *AlbumDownloader) DownloadAll() {
-	albums := ad.VKWrapper.GetAlbums(ad.NeedSystem)
+	albums := ad.VKWrapper.GetAlbums(ad.UserID, ad.NeedSystem)
 	for _, album := range albums {
 		ad.DownloadAlbum(album)
 	}

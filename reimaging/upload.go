@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+	vkw "github.com/forgoty/go-reimaging/reimaging/vkwrapper"
 )
 
 var uploadCmd = &cobra.Command{
@@ -25,6 +26,6 @@ func init() {
 }
 
 func upload(args []string) {
-	fmt.Println("upload called with", args[0])
-	fmt.Println(AlbumID, title)
+	album := vkw.NewVKWrapper().CreateAlbum(title)
+	fmt.Println("Created: " + album.Title)
 }
