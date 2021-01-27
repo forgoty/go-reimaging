@@ -21,7 +21,7 @@ func Execute() {
 // Flag Global Values
 var (
 	System  bool
-	AlbumId int
+	AlbumID int
 )
 
 func init() {

@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/spf13/cobra"
+	vkw "github.com/forgoty/go-reimaging/reimaging/vkwrapper"
 )
 
 var listCmd = &cobra.Command{
@@ -30,15 +31,13 @@ var listCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(listCmd)
-
 	listCmd.Flags().BoolVarP(&System, "system", "s", false, "Enable system albums")
 }
 
 func list(args []string) {
-	vk := GetVk()
-	userId, _ := strconv.Atoi(args[0])
+	userID, _ := strconv.Atoi(args[0])
+	albums := vkw.NewVKWrapper(userID).GetAlbums(System)
 
-	albums := GetAlbums(vk, userId)
 	for _, album := range albums {
 		fmt.Printf("%s(%d) - id:%d\n", album.Title, album.Size, album.ID)
 	}
