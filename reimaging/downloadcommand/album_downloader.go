@@ -11,17 +11,18 @@ import (
 	"time"
 
 	progressbar "github.com/schollz/progressbar/v3"
+	vkw "github.com/forgoty/go-reimaging/reimaging/vkwrapper"
 )
 
 type AlbumDownloader struct {
-	VKWrapper *VKWrapper
+	VKWrapper *vkw.VKWrapper
 	DownloadPath string
 	NeedSystem bool
 }
 
 func NewAlbumDownloader(userID int, downloadPath string, needSystem bool) *AlbumDownloader {
 	return &AlbumDownloader{
-		VKWrapper: NewVKWrapper(userID),
+		VKWrapper: vkw.NewVKWrapper(userID),
 		DownloadPath: downloadPath,
 		NeedSystem: needSystem,
 	}
@@ -43,7 +44,7 @@ func (ad *AlbumDownloader) DownloadAll() {
 	}
 }
 
-func (ad *AlbumDownloader) DownloadAlbum(album PhotoAlbum) {
+func (ad *AlbumDownloader) DownloadAlbum(album vkw.PhotoAlbum) {
 	offsets := getOffset(album.Size)
 	photosUrls := []string{}
 	for _, offset := range offsets {
