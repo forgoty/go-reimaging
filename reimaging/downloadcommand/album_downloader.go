@@ -13,25 +13,34 @@ import (
 	progressbar "github.com/schollz/progressbar/v3"
 	vkw "github.com/forgoty/go-reimaging/reimaging/vkwrapper"
 )
-
-type AlbumDownloader struct {
-	VKWrapper *vkw.VKWrapper
-	DownloadPath string
+type downloadOptions struct {
 	UserID int
+	DownloadPath string
 	NeedSystem bool
 }
 
-func NewAlbumDownloader(userID int, downloadPath string, needSystem bool) *AlbumDownloader {
-	return &AlbumDownloader{
-		VKWrapper: vkw.NewVKWrapper(),
+func NewDownloadOptions(userID int, downloadPath string, needSystem bool) *downloadOptions {
+	return &downloadOptions{
 		UserID: userID,
 		DownloadPath: downloadPath,
 		NeedSystem: needSystem,
 	}
 }
 
+type AlbumDownloader struct {
+	vkWrapper vkw.VKWrapper
+	options *downloadOptions
+}
+
+func NewAlbumDownloader(vk vkw.VKWrapper, options *downloadOptions) *AlbumDownloader {
+	return &AlbumDownloader{
+		vkWrapper: vk,
+		options: options,
+	}
+}
+
 func (ad *AlbumDownloader) DownloadAlbumByID(albumID int) {
-	albums := ad.VKWrapper.GetAlbums(ad.UserID, ad.NeedSystem)
+	albums := ad.vkWrapper.GetAlbums(ad.options.UserID, ad.options.NeedSystem)
 	for _, album := range albums {
 		if album.ID == albumID {
 			ad.DownloadAlbum(album)
@@ -40,7 +49,7 @@ func (ad *AlbumDownloader) DownloadAlbumByID(albumID int) {
 }
 
 func (ad *AlbumDownloader) DownloadAll() {
-	albums := ad.VKWrapper.GetAlbums(ad.UserID, ad.NeedSystem)
+	albums := ad.vkWrapper.GetAlbums(ad.options.UserID, ad.options.NeedSystem)
 	for _, album := range albums {
 		ad.DownloadAlbum(album)
 	}
@@ -50,10 +59,10 @@ func (ad *AlbumDownloader) DownloadAlbum(album vkw.PhotoAlbum) {
 	offsets := getOffset(album.Size)
 	photosUrls := []string{}
 	for _, offset := range offsets {
-		photosUrls = append(photosUrls, ad.VKWrapper.GetPhotoURLs(album, offset)...)
+		photosUrls = append(photosUrls, ad.vkWrapper.GetPhotoURLs(album, offset)...)
 	}
 	if len(photosUrls) > 0 {
-		pathDir := createAlbumDir(ad.DownloadPath, album.Title)
+		pathDir := createAlbumDir(ad.options.DownloadPath, album.Title)
 		downloadPhotos(photosUrls, pathDir, album.Title)
 	}
 }

@@ -1,4 +1,4 @@
-package downloadcommand
+package vkwrapper
 
 import (
 	"fmt"
@@ -9,15 +9,21 @@ import (
 	"github.com/SevereCloud/vksdk/v2/api/params"
 )
 
-type VKWrapper struct {
+type VKWrapper interface {
+	GetPhotoURLs(album PhotoAlbum, offset int) []string
+	GetAlbums(userID int, NeedSystem bool) []PhotoAlbum
+	CreateAlbum(title string) PhotoAlbum
+}
+
+type VkAPIWrapper struct {
 	vk *api.VK
 }
 
-func NewVKWrapper() *VKWrapper {
-	return &VKWrapper{getVk()}
+func NewVKWrapper() *VkAPIWrapper {
+	return &VkAPIWrapper{getVk()}
 }
 
-func (vkw *VKWrapper) GetPhotoURLs(album PhotoAlbum, offset int) []string {
+func (vkw *VkAPIWrapper) GetPhotoURLs(album PhotoAlbum, offset int) []string {
 	response_params := params.NewPhotosGetBuilder()
 	response_params.OwnerID(album.OwnerID)
 	response_params.AlbumID(strconv.Itoa(album.ID))
@@ -39,7 +45,7 @@ func (vkw *VKWrapper) GetPhotoURLs(album PhotoAlbum, offset int) []string {
 	return urls
 }
 
-func (vkw *VKWrapper) GetAlbums(userID int, NeedSystem bool) []PhotoAlbum {
+func (vkw *VkAPIWrapper) GetAlbums(userID int, NeedSystem bool) []PhotoAlbum {
 	response_params := params.NewPhotosGetAlbumsBuilder()
 	response_params.OwnerID(userID)
 	response_params.NeedSystem(NeedSystem)
@@ -64,7 +70,7 @@ func (vkw *VKWrapper) GetAlbums(userID int, NeedSystem bool) []PhotoAlbum {
 	return albums
 }
 
-func (vkw *VKWrapper) CreateAlbum(title string) PhotoAlbum{
+func (vkw *VkAPIWrapper) CreateAlbum(title string) PhotoAlbum{
 	response_params := params.NewPhotosCreateAlbumBuilder()
 	response_params.Title(title)
 	response_params.PrivacyView([]string{"only_me"})

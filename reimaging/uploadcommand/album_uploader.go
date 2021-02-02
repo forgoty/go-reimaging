@@ -5,13 +5,13 @@ import (
 )
 
 type AlbumUploader struct {
-	VKWrapper *vkw.VKWrapper
+	vkWrapper vkw.VKWrapper
 	UploadPath string
 }
 
 func NewAlbumUploader(uploadPath string) *AlbumUploader {
 	return &AlbumUploader{
-		VKWrapper: vkw.NewVKWrapper(),
+		vkWrapper: vkw.NewVKWrapper(),
 		UploadPath: uploadPath,
 	}
 }
