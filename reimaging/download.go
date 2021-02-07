@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/forgoty/go-reimaging/reimaging/downloadcommand"
+	"github.com/forgoty/go-reimaging/reimaging/validator"
 	vkw "github.com/forgoty/go-reimaging/reimaging/vkwrapper"
 )
 
@@ -54,7 +55,7 @@ func download(args []string) {
 }
 
 func validateDownloadDirictory() {
-	_, error := validateDownloadDir(path)
+	_, error := validator.ValidateDownloadDir(path)
 	if error != nil {
 		exitWithErrorMessage(error)
 	}

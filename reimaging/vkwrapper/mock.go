@@ -4,6 +4,19 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+
+var (
+	TestName = "mock"
+	TestID = 123
+	TestAlbum = PhotoAlbum{
+		ID: TestID,
+		OwnerID: TestID,
+		Size: 666,
+		Title: TestName,
+	}
+)
+
+
 type MockVKWrapper struct{
 	mock.Mock
 }
@@ -18,10 +31,11 @@ func (m *MockVKWrapper) GetAlbums(userID int, NeedSystem bool) []PhotoAlbum {
 }
 
 func (m *MockVKWrapper) CreateAlbum(title string) PhotoAlbum {
-	return PhotoAlbum{
-		ID: 12345,
-		OwnerID: 12345,
-		Size: 1,
-		Title: "mock",
-	}
+	m.Called(title)
+	return TestAlbum
+}
+
+func (m *MockVKWrapper) GetUploadServer(id int) string {
+	m.Called(id)
+	return TestName
 }

@@ -6,13 +6,6 @@ import (
 	vkw "github.com/forgoty/go-reimaging/reimaging/vkwrapper"
 )
 
-var testAlbum = vkw.PhotoAlbum{
-	ID: 12345,
-	OwnerID: 12345,
-	Size: 1,
-	Title: "mock",
-}
-
 func TestAlbumDownloaderDownloadAll(t *testing.T) {
 	mockedVKWrapper := new(vkw.MockVKWrapper)
 	mockedVKWrapper.On("GetAlbums", 12345, false).Return([]vkw.PhotoAlbum{})

@@ -13,6 +13,7 @@ type VKWrapper interface {
 	GetPhotoURLs(album PhotoAlbum, offset int) []string
 	GetAlbums(userID int, NeedSystem bool) []PhotoAlbum
 	CreateAlbum(title string) PhotoAlbum
+	GetUploadServer(id int) string
 }
 
 type VkAPIWrapper struct {
@@ -24,13 +25,13 @@ func NewVKWrapper() *VkAPIWrapper {
 }
 
 func (vkw *VkAPIWrapper) GetPhotoURLs(album PhotoAlbum, offset int) []string {
-	response_params := params.NewPhotosGetBuilder()
-	response_params.OwnerID(album.OwnerID)
-	response_params.AlbumID(strconv.Itoa(album.ID))
-	response_params.Offset(offset)
-	response_params.PhotoSizes(true)
-	response_params.Count(1000)
-	response, vkErr := vkw.vk.PhotosGet(response_params.Params)
+	responseParams := params.NewPhotosGetBuilder()
+	responseParams.OwnerID(album.OwnerID)
+	responseParams.AlbumID(strconv.Itoa(album.ID))
+	responseParams.Offset(offset)
+	responseParams.PhotoSizes(true)
+	responseParams.Count(1000)
+	response, vkErr := vkw.vk.PhotosGet(responseParams.Params)
 	if vkErr != nil {
 		fmt.Println(vkErr)
 	}
@@ -46,10 +47,10 @@ func (vkw *VkAPIWrapper) GetPhotoURLs(album PhotoAlbum, offset int) []string {
 }
 
 func (vkw *VkAPIWrapper) GetAlbums(userID int, NeedSystem bool) []PhotoAlbum {
-	response_params := params.NewPhotosGetAlbumsBuilder()
-	response_params.OwnerID(userID)
-	response_params.NeedSystem(NeedSystem)
-	response, vkErr := vkw.vk.PhotosGetAlbums(response_params.Params)
+	responseParams := params.NewPhotosGetAlbumsBuilder()
+	responseParams.OwnerID(userID)
+	responseParams.NeedSystem(NeedSystem)
+	response, vkErr := vkw.vk.PhotosGetAlbums(responseParams.Params)
 	if vkErr != nil {
 		fmt.Println(vkErr)
 		os.Exit(1)
@@ -71,10 +72,10 @@ func (vkw *VkAPIWrapper) GetAlbums(userID int, NeedSystem bool) []PhotoAlbum {
 }
 
 func (vkw *VkAPIWrapper) CreateAlbum(title string) PhotoAlbum{
-	response_params := params.NewPhotosCreateAlbumBuilder()
-	response_params.Title(title)
-	response_params.PrivacyView([]string{"only_me"})
-	rawAlbum, vkErr := vkw.vk.PhotosCreateAlbum(response_params.Params)
+	responseParams := params.NewPhotosCreateAlbumBuilder()
+	responseParams.Title(title)
+	responseParams.PrivacyView([]string{"only_me"})
+	rawAlbum, vkErr := vkw.vk.PhotosCreateAlbum(responseParams.Params)
 	if vkErr != nil {
 		fmt.Println(vkErr)
 		os.Exit(1)
@@ -86,6 +87,17 @@ func (vkw *VkAPIWrapper) CreateAlbum(title string) PhotoAlbum{
 		Size: rawAlbum.Size,
 		Title: rawAlbum.Title,
 	}
+}
+
+func (vkw *VkAPIWrapper) GetUploadServer(id int) string {
+	responseParams := params.NewPhotosGetUploadServerBuilder()
+	responseParams.AlbumID(id)
+	uploadServerResponse, vkErr := vkw.vk.PhotosGetUploadServer(responseParams.Params)
+	if vkErr != nil {
+		fmt.Println(vkErr)
+		os.Exit(1)
+	}
+	return uploadServerResponse.UploadURL
 }
 
 func getVk() *api.VK {

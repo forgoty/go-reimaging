@@ -1,12 +1,14 @@
-package reimaging
+package validator
 
 import (
 	"errors"
 	"os"
 	"path/filepath"
+	"io/ioutil"
+	"strings"
 )
 
-func validateDownloadDir(path string) (string, error) {
+func ValidateDownloadDir(path string) (string, error) {
 	path, error := validatePath(path)
 	return path, error
 }
@@ -41,25 +43,25 @@ func isDir(path string) (bool, error) {
 
 // For Upload Command
 
-// func IsPathContainsImages(path string) bool {
-// 	files := IOReadDir(path)
-// 	if len(files) > 0 {
-// 		return true
-// 	} else {
-// 		return false
-// 	}
-// }
+func IsPathContainsImages(path string) bool {
+	files := IOReadDir(path)
+	if len(files) > 0 {
+		return true
+	} else {
+		return false
+	}
+}
 
-// func IOReadDir(root string) []string {
-// 	var extensions = [4]string{"jpg", "bmp", "png", "gif"}
-// 	var files []string
-// 	fileInfo, _ := ioutil.ReadDir(root)
-// 	for _, file := range fileInfo {
-// 		for _, ext := range extensions {
-// 			if strings.HasSuffix(file.Name(), ext) {
-// 				files = append(files, file.Name())
-// 			}
-// 		}
-// 	}
-// 	return files
-// }
+func IOReadDir(root string) []string {
+	var extensions = [4]string{"jpg", "bmp", "png", "gif"}
+	var files []string
+	fileInfo, _ := ioutil.ReadDir(root)
+	for _, file := range fileInfo {
+		for _, ext := range extensions {
+			if strings.HasSuffix(file.Name(), ext) {
+				files = append(files, file.Name())
+			}
+		}
+	}
+	return files
+}

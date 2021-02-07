@@ -9,9 +9,17 @@ type AlbumUploader struct {
 	UploadPath string
 }
 
-func NewAlbumUploader(uploadPath string) *AlbumUploader {
+func NewAlbumUploader(vk vkw.VKWrapper, uploadPath string) *AlbumUploader {
 	return &AlbumUploader{
-		vkWrapper: vkw.NewVKWrapper(),
+		vkWrapper: vk,
 		UploadPath: uploadPath,
 	}
+}
+
+func (au *AlbumUploader) CreateAlbum(title string) vkw.PhotoAlbum {
+	return au.vkWrapper.CreateAlbum(title)
+}
+
+func (au *AlbumUploader) getUploadServer(album vkw.PhotoAlbum) string {
+	return au.vkWrapper.GetUploadServer(album.ID)
 }
