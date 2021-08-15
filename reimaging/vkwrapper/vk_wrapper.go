@@ -2,6 +2,7 @@ package vkwrapper
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 
@@ -14,6 +15,7 @@ type VKWrapper interface {
 	GetAlbums(userID int, NeedSystem bool) []PhotoAlbum
 	CreateAlbum(title string) PhotoAlbum
 	GetUploadServer(id int) string
+	UploadPhoto(albumID int, file io.Reader) error
 }
 
 type VkAPIWrapper struct {
@@ -60,10 +62,10 @@ func (vkw *VkAPIWrapper) GetAlbums(userID int, NeedSystem bool) []PhotoAlbum {
 		albums = append(
 			albums,
 			PhotoAlbum{
-				ID: rawAlbum.ID,
+				ID:      rawAlbum.ID,
 				OwnerID: rawAlbum.OwnerID,
-				Size: rawAlbum.Size,
-				Title: rawAlbum.Title,
+				Size:    rawAlbum.Size,
+				Title:   rawAlbum.Title,
 			},
 		)
 	}
@@ -71,7 +73,7 @@ func (vkw *VkAPIWrapper) GetAlbums(userID int, NeedSystem bool) []PhotoAlbum {
 	return albums
 }
 
-func (vkw *VkAPIWrapper) CreateAlbum(title string) PhotoAlbum{
+func (vkw *VkAPIWrapper) CreateAlbum(title string) PhotoAlbum {
 	responseParams := params.NewPhotosCreateAlbumBuilder()
 	responseParams.Title(title)
 	responseParams.PrivacyView([]string{"only_me"})
@@ -82,10 +84,10 @@ func (vkw *VkAPIWrapper) CreateAlbum(title string) PhotoAlbum{
 	}
 
 	return PhotoAlbum{
-		ID: rawAlbum.ID,
+		ID:      rawAlbum.ID,
 		OwnerID: rawAlbum.OwnerID,
-		Size: rawAlbum.Size,
-		Title: rawAlbum.Title,
+		Size:    rawAlbum.Size,
+		Title:   rawAlbum.Title,
 	}
 }
 
@@ -100,13 +102,18 @@ func (vkw *VkAPIWrapper) GetUploadServer(id int) string {
 	return uploadServerResponse.UploadURL
 }
 
+func (vkw *VkAPIWrapper) UploadPhoto(albumID int, file io.Reader) error {
+	_, err := vkw.vk.UploadPhoto(albumID, file)
+	return err
+}
+
 func getVk() *api.VK {
 	return api.NewVK(os.Getenv("VK_TOKEN"))
 }
 
 type PhotoAlbum struct {
-	ID          int
-	OwnerID     int
-	Size        int
-	Title       string
+	ID      int
+	OwnerID int
+	Size    int
+	Title   string
 }

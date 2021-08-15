@@ -2,9 +2,9 @@ package validator
 
 import (
 	"errors"
+	"io/ioutil"
 	"os"
 	"path/filepath"
-	"io/ioutil"
 	"strings"
 )
 
@@ -16,7 +16,7 @@ func ValidateDownloadDir(path string) (string, error) {
 func validatePath(path string) (string, error) {
 	path = getAbsPath(path)
 
-	if res, err := isDir(path); err != nil || res != true {
+	if res, err := isDir(path); err != nil || !res {
 		return "", errors.New("Error: Giving Path is not valid")
 	}
 
@@ -41,25 +41,14 @@ func isDir(path string) (bool, error) {
 	return true, nil
 }
 
-// For Upload Command
-
-func IsPathContainsImages(path string) bool {
-	files := IOReadDir(path)
-	if len(files) > 0 {
-		return true
-	} else {
-		return false
-	}
-}
-
-func IOReadDir(root string) []string {
+func ReadDir(root string) []string {
 	var extensions = [4]string{"jpg", "bmp", "png", "gif"}
 	var files []string
 	fileInfo, _ := ioutil.ReadDir(root)
 	for _, file := range fileInfo {
 		for _, ext := range extensions {
 			if strings.HasSuffix(file.Name(), ext) {
-				files = append(files, file.Name())
+				files = append(files, root+string(os.PathSeparator)+file.Name())
 			}
 		}
 	}
