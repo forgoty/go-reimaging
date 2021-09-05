@@ -1,13 +1,18 @@
 package vkwrapper
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
+	"mime/multipart"
+	"net/http"
 	"os"
 	"strconv"
 
 	"github.com/SevereCloud/vksdk/v2/api"
 	"github.com/SevereCloud/vksdk/v2/api/params"
+	"github.com/SevereCloud/vksdk/v2/object"
 )
 
 type VKWrapper interface {
@@ -16,6 +21,7 @@ type VKWrapper interface {
 	CreateAlbum(title string) PhotoAlbum
 	GetUploadServer(id int) string
 	UploadPhoto(albumID int, file io.Reader) error
+	UploadFileGroup(client *http.Client, group []string, uploadServer string, albumId int) error
 }
 
 type VkAPIWrapper struct {
@@ -100,6 +106,56 @@ func (vkw *VkAPIWrapper) GetUploadServer(id int) string {
 		os.Exit(1)
 	}
 	return uploadServerResponse.UploadURL
+}
+
+// Refactor me
+func (vkw *VkAPIWrapper) UploadFileGroup(client *http.Client, group []string, uploadServer string, albumId int) error {
+	b := bytes.Buffer{}
+	writer := multipart.NewWriter(&b)
+	for i := range group {
+		r, err := os.ReadFile(group[i])
+		if err != nil {
+			return err
+		}
+		w, err := writer.CreateFormFile(fmt.Sprintf("file%d", i+1), group[i])
+		if err != nil {
+			return err
+		}
+		if _, err = io.Copy(w, bytes.NewReader(r)); err != nil {
+			return err
+		}
+	}
+	writer.Close()
+	req, err := http.NewRequest("POST", uploadServer, &b)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	res, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("bad status: %s", res.Status)
+	}
+
+	body, _ := io.ReadAll(res.Body)
+	var handler object.PhotosPhotoUploadResponse
+	err = json.Unmarshal(body, &handler)
+	if err != nil {
+		return err
+	}
+
+	_, err = vkw.vk.PhotosSave(api.Params{
+		"server":      handler.Server,
+		"photos_list": handler.PhotosList,
+		"aid":         handler.AID,
+		"hash":        handler.Hash,
+		"album_id":    albumId,
+	})
+	return err
 }
 
 func (vkw *VkAPIWrapper) UploadPhoto(albumID int, file io.Reader) error {

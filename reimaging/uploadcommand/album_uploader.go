@@ -4,18 +4,14 @@ import (
 	"fmt"
 	"github.com/forgoty/go-reimaging/reimaging/validator"
 	vkw "github.com/forgoty/go-reimaging/reimaging/vkwrapper"
+	"net/http"
 	"os"
 )
 
+var FilesInPostRequest int = 5
+
 type result struct {
 	err error
-}
-
-var extensions = map[string]bool{
-	"jpg": true,
-	"png": true,
-	"gif": true,
-	"bmp": true,
 }
 
 type AlbumUploader struct {
@@ -32,28 +28,42 @@ func (au *AlbumUploader) CreateAlbum(title string) vkw.PhotoAlbum {
 	return au.vkWrapper.CreateAlbum(title)
 }
 
+// func (au *AlbumUploader) Upload(albumId int, filepath string) {
+// 	files := validator.ReadDir(filepath)
+// 	//semaphoreChan := make(chan struct{}, 1)
+// 	// resultsChan := make(chan *result)
+// 	defer func() {
+// 		// close(semaphoreChan)
+// 		// close(resultsChan)
+// 	}()
+// 	for _, file := range files {
+// 		res := au.uploadPhoto(albumId, file)
+// 		fmt.Println(res.err)
+// 	}
+// 	// var results []result
+// 	// fileLen := len(files)
+// 	// for {
+// 	// 	result := <-resultsChan
+// 	// 	fmt.Println(result.err)
+// 	// 	results = append(results, *result)
+// 	// 	if len(results) == fileLen {
+// 	// 		break
+// 	// 	}
+// 	// }
+// }
+
 func (au *AlbumUploader) Upload(albumId int, filepath string) {
 	files := validator.ReadDir(filepath)
 	//semaphoreChan := make(chan struct{}, 1)
 	// resultsChan := make(chan *result)
-	defer func() {
-		// close(semaphoreChan)
-		// close(resultsChan)
-	}()
-	for _, file := range files {
-		res := au.uploadPhoto(albumId, file)
-		fmt.Println(res.err)
+	uploadServer := au.vkWrapper.GetUploadServer(albumId)
+	fileGroups := au.createFileGroups(files)
+	client := http.Client{}
+	for _, group := range fileGroups {
+		// err := au.uploadFileGroup(group, uploadServer)
+		err := au.vkWrapper.UploadFileGroup(&client, group, uploadServer, albumId)
+		fmt.Println(err)
 	}
-	// var results []result
-	// fileLen := len(files)
-	// for {
-	// 	result := <-resultsChan
-	// 	fmt.Println(result.err)
-	// 	results = append(results, *result)
-	// 	if len(results) == fileLen {
-	// 		break
-	// 	}
-	// }
 }
 
 func (au *AlbumUploader) uploadPhoto(albumId int, filepath string) *result {
@@ -71,4 +81,21 @@ func (au *AlbumUploader) uploadPhoto(albumId int, filepath string) *result {
 	}
 	return res
 	// resultsChan <- res
+}
+
+func (au *AlbumUploader) createFileGroups(filePaths []string) [][]string {
+	var ret [][]string
+	min := func(a, b int) int {
+		if a <= b {
+			return a
+		}
+		return b
+	}
+
+	for i := 0; i < len(filePaths); i += FilesInPostRequest {
+		ret = append(ret, filePaths[i:min(i+FilesInPostRequest, len(filePaths))])
+		return ret // delete me later
+	}
+	return ret
+
 }

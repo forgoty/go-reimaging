@@ -31,8 +31,8 @@ func upload(args []string) {
 	albumUploader := uploadcommand.NewAlbumUploader()
 	if AlbumID != 0 {
 		albumUploader.Upload(AlbumID, uploadPath)
-	} else {
-		album := albumUploader.CreateAlbum(title)
-		albumUploader.Upload(album.ID, uploadPath)
+		return
 	}
+	album := albumUploader.CreateAlbum(title)
+	albumUploader.Upload(album.ID, uploadPath)
 }
