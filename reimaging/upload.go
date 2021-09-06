@@ -30,9 +30,11 @@ func init() {
 func upload(args []string) {
 	albumUploader := uploadcommand.NewAlbumUploader()
 	if AlbumID != 0 {
-		albumUploader.Upload(AlbumID, uploadPath)
+		ids := []int{AlbumID}
+		albums := albumUploader.GetAlbumsByIDs(ids)
+		albumUploader.Upload(AlbumID, uploadPath, albums[0].Title)
 		return
 	}
 	album := albumUploader.CreateAlbum(title)
-	albumUploader.Upload(album.ID, uploadPath)
+	albumUploader.Upload(album.ID, uploadPath, title)
 }

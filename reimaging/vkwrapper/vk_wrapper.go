@@ -18,6 +18,7 @@ import (
 type VKWrapper interface {
 	GetPhotoURLs(album PhotoAlbum, offset int) []string
 	GetAlbums(userID int, NeedSystem bool) []PhotoAlbum
+	GetAlbumsByAlbumIds(albumIDs []int) []PhotoAlbum
 	CreateAlbum(title string) PhotoAlbum
 	GetUploadServer(id int) string
 	UploadPhoto(albumID int, file io.Reader) error
@@ -58,6 +59,30 @@ func (vkw *VkAPIWrapper) GetAlbums(userID int, NeedSystem bool) []PhotoAlbum {
 	responseParams := params.NewPhotosGetAlbumsBuilder()
 	responseParams.OwnerID(userID)
 	responseParams.NeedSystem(NeedSystem)
+	response, vkErr := vkw.vk.PhotosGetAlbums(responseParams.Params)
+	if vkErr != nil {
+		fmt.Println(vkErr)
+		os.Exit(1)
+	}
+	albums := []PhotoAlbum{}
+	for _, rawAlbum := range response.Items {
+		albums = append(
+			albums,
+			PhotoAlbum{
+				ID:      rawAlbum.ID,
+				OwnerID: rawAlbum.OwnerID,
+				Size:    rawAlbum.Size,
+				Title:   rawAlbum.Title,
+			},
+		)
+	}
+
+	return albums
+}
+
+func (vkw *VkAPIWrapper) GetAlbumsByAlbumIds(albumIDs []int) []PhotoAlbum {
+	responseParams := params.NewPhotosGetAlbumsBuilder()
+	responseParams.AlbumIDs(albumIDs)
 	response, vkErr := vkw.vk.PhotosGetAlbums(responseParams.Params)
 	if vkErr != nil {
 		fmt.Println(vkErr)
