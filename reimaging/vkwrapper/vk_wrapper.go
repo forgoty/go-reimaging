@@ -22,7 +22,7 @@ type VKWrapper interface {
 	CreateAlbum(title string) PhotoAlbum
 	GetUploadServer(id int) string
 	UploadPhoto(albumID int, file io.Reader) error
-	UploadFileGroup(client *http.Client, group []string, uploadServer string, albumId int) error
+	UploadFileGroup(client *http.Client, group []string, uploadServer string, albumId int, semCh chan struct{}, errCh chan error)
 }
 
 type VkAPIWrapper struct {
@@ -134,43 +134,59 @@ func (vkw *VkAPIWrapper) GetUploadServer(id int) string {
 }
 
 // Refactor me
-func (vkw *VkAPIWrapper) UploadFileGroup(client *http.Client, group []string, uploadServer string, albumId int) error {
+func (vkw *VkAPIWrapper) UploadFileGroup(client *http.Client, group []string, uploadServer string, albumId int, semCh chan struct{}, errCh chan error) {
+	semCh <- struct{}{}
 	b := bytes.Buffer{}
 	writer := multipart.NewWriter(&b)
 	for i := range group {
 		r, err := os.ReadFile(group[i])
 		if err != nil {
-			return err
+			errCh <- err
+			<-semCh
+			return
 		}
 		w, err := writer.CreateFormFile(fmt.Sprintf("file%d", i+1), group[i])
 		if err != nil {
-			return err
+			errCh <- err
+			<-semCh
+			return
 		}
 		if _, err = io.Copy(w, bytes.NewReader(r)); err != nil {
-			return err
+			errCh <- err
+			<-semCh
+			return
 		}
 	}
 	writer.Close()
 	req, err := http.NewRequest("POST", uploadServer, &b)
 	if err != nil {
-		return err
+		errCh <- err
+		<-semCh
+		return
 	}
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
 	res, err := client.Do(req)
 	if err != nil {
-		return err
+		errCh <- err
+		<-semCh
+		return
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
-		return fmt.Errorf("bad status: %s", res.Status)
+		err = fmt.Errorf("bad status: %s", res.Status)
+		errCh <- err
+		<-semCh
+		return
 	}
 
 	body, _ := io.ReadAll(res.Body)
 	var handler object.PhotosPhotoUploadResponse
 	err = json.Unmarshal(body, &handler)
 	if err != nil {
-		return err
+		errCh <- err
+		<-semCh
+		return
 	}
 
 	_, err = vkw.vk.PhotosSave(api.Params{
@@ -180,7 +196,8 @@ func (vkw *VkAPIWrapper) UploadFileGroup(client *http.Client, group []string, up
 		"hash":        handler.Hash,
 		"album_id":    albumId,
 	})
-	return err
+	<-semCh
+	errCh <- err
 }
 
 func (vkw *VkAPIWrapper) UploadPhoto(albumID int, file io.Reader) error {

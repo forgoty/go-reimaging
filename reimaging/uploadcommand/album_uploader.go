@@ -37,14 +37,27 @@ func (au *AlbumUploader) Upload(albumId int, filepath, title string) {
 	uploadServer := au.vkWrapper.GetUploadServer(albumId)
 	fileGroups := au.createFileGroups(files)
 	client := http.Client{}
+	semaphoreChan := make(chan struct{}, 50)
+	errCh := make(chan error)
+	var results []error
+
 	bar := getProgressBar(int64(len(files)), title)
 	for _, group := range fileGroups {
-		err := au.vkWrapper.UploadFileGroup(&client, group, uploadServer, albumId)
+		go au.vkWrapper.UploadFileGroup(&client, group, uploadServer, albumId, semaphoreChan, errCh)
+	}
+	for {
+		err := <-errCh
 		if err != nil {
 			fmt.Println(err)
 			continue
+		} else {
+			bar.Add(FilesInPostRequest)
 		}
-		bar.Add(len(group))
+		results = append(results, err)
+		if len(results) == len(fileGroups) {
+			bar.Finish()
+			break
+		}
 	}
 }
 
