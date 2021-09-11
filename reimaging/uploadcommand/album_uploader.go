@@ -6,6 +6,7 @@ import (
 	vkw "github.com/forgoty/go-reimaging/reimaging/vkwrapper"
 	progressbar "github.com/schollz/progressbar/v3"
 	"net/http"
+	"os"
 )
 
 var FilesInPostRequest int = 5
@@ -34,6 +35,7 @@ func (au *AlbumUploader) GetAlbumsByIDs(ids []int) []vkw.PhotoAlbum {
 
 func (au *AlbumUploader) Upload(albumId int, filepath, title string) {
 	files := validator.ReadDir(filepath)
+	lenFiles := len(files)
 	uploadServer := au.vkWrapper.GetUploadServer(albumId)
 	fileGroups := au.createFileGroups(files)
 	client := http.Client{}
@@ -41,7 +43,7 @@ func (au *AlbumUploader) Upload(albumId int, filepath, title string) {
 	errCh := make(chan error)
 	var results []error
 
-	bar := getProgressBar(int64(len(files)), title)
+	bar := getProgressBar(int64(lenFiles), title)
 	for _, group := range fileGroups {
 		go au.vkWrapper.UploadFileGroup(&client, group, uploadServer, albumId, semaphoreChan, errCh)
 	}
@@ -49,16 +51,39 @@ func (au *AlbumUploader) Upload(albumId int, filepath, title string) {
 		err := <-errCh
 		if err != nil {
 			fmt.Println(err)
-			continue
 		} else {
-			bar.Add(FilesInPostRequest)
+			state := bar.State().CurrentBytes
+			bar.Add(calculateAdd(int(state), lenFiles))
 		}
 		results = append(results, err)
+		if len(filterNotNils(results)) > 3 {
+			bar.Finish()
+			fmt.Println()
+			fmt.Println("Too many errors occured recently")
+			os.Exit(1)
+		}
 		if len(results) == len(fileGroups) {
 			bar.Finish()
 			break
 		}
 	}
+}
+
+func calculateAdd(current, max int) int {
+	if current+FilesInPostRequest >= max {
+		return max - current
+	}
+	return FilesInPostRequest
+}
+
+func filterNotNils(results []error) []error {
+	var res []error
+	for _, i := range results {
+		if i != nil {
+			res = append(res, i)
+		}
+	}
+	return res
 }
 
 func (au *AlbumUploader) createFileGroups(filePaths []string) [][]string {
