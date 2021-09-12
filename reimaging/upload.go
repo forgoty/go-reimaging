@@ -2,6 +2,7 @@ package reimaging
 
 import (
 	"github.com/forgoty/go-reimaging/reimaging/uploadcommand"
+	vkw "github.com/forgoty/go-reimaging/reimaging/vkwrapper"
 	"github.com/spf13/cobra"
 )
 
@@ -28,13 +29,14 @@ func init() {
 }
 
 func upload(args []string) {
-	albumUploader := uploadcommand.NewAlbumUploader()
+	vkWrapper := vkw.NewVKWrapper()
+	albumUploader := uploadcommand.NewAlbumUploader(vkWrapper)
 	if AlbumID != 0 {
 		ids := []int{AlbumID}
-		albums := albumUploader.GetAlbumsByIDs(ids)
+		albums := vkWrapper.GetAlbumsByAlbumIds(ids)
 		albumUploader.Upload(AlbumID, uploadPath, albums[0].Title)
 		return
 	}
-	album := albumUploader.CreateAlbum(title)
+	album := vkWrapper.CreateAlbum(title)
 	albumUploader.Upload(album.ID, uploadPath, title)
 }

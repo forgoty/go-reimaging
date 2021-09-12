@@ -1,12 +1,8 @@
 package vkwrapper
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
-	"mime/multipart"
-	"net/http"
 	"os"
 	"strconv"
 
@@ -21,8 +17,7 @@ type VKWrapper interface {
 	GetAlbumsByAlbumIds(albumIDs []int) []PhotoAlbum
 	CreateAlbum(title string) PhotoAlbum
 	GetUploadServer(id int) string
-	UploadPhoto(albumID int, file io.Reader) error
-	UploadFileGroup(client *http.Client, group []string, uploadServer string, albumId int, semCh chan struct{}, errCh chan error)
+	PhotosSave(body []byte, albumId int) error
 }
 
 type VkAPIWrapper struct {
@@ -133,75 +128,20 @@ func (vkw *VkAPIWrapper) GetUploadServer(id int) string {
 	return uploadServerResponse.UploadURL
 }
 
-// Refactor me
-func (vkw *VkAPIWrapper) UploadFileGroup(client *http.Client, group []string, uploadServer string, albumId int, semCh chan struct{}, errCh chan error) {
-	semCh <- struct{}{}
-	b := bytes.Buffer{}
-	writer := multipart.NewWriter(&b)
-	for i := range group {
-		r, err := os.ReadFile(group[i])
-		if err != nil {
-			errCh <- err
-			<-semCh
-			return
-		}
-		w, err := writer.CreateFormFile(fmt.Sprintf("file%d", i+1), group[i])
-		if err != nil {
-			errCh <- err
-			<-semCh
-			return
-		}
-		if _, err = io.Copy(w, bytes.NewReader(r)); err != nil {
-			errCh <- err
-			<-semCh
-			return
-		}
-	}
-	writer.Close()
-	req, err := http.NewRequest("POST", uploadServer, &b)
-	if err != nil {
-		errCh <- err
-		<-semCh
-		return
-	}
-	req.Header.Set("Content-Type", writer.FormDataContentType())
-
-	res, err := client.Do(req)
-	if err != nil {
-		errCh <- err
-		<-semCh
-		return
-	}
-	defer res.Body.Close()
-	if res.StatusCode != http.StatusOK {
-		err = fmt.Errorf("bad status: %s", res.Status)
-		errCh <- err
-		<-semCh
-		return
-	}
-
-	body, _ := io.ReadAll(res.Body)
+func (vkw *VkAPIWrapper) PhotosSave(body []byte, albumId int) error {
 	var handler object.PhotosPhotoUploadResponse
-	err = json.Unmarshal(body, &handler)
+	err := json.Unmarshal(body, &handler)
 	if err != nil {
-		errCh <- err
-		<-semCh
-		return
+		return err
 	}
-
-	_, err = vkw.vk.PhotosSave(api.Params{
+	params := api.Params{
 		"server":      handler.Server,
 		"photos_list": handler.PhotosList,
 		"aid":         handler.AID,
 		"hash":        handler.Hash,
 		"album_id":    albumId,
-	})
-	<-semCh
-	errCh <- err
-}
-
-func (vkw *VkAPIWrapper) UploadPhoto(albumID int, file io.Reader) error {
-	_, err := vkw.vk.UploadPhoto(albumID, file)
+	}
+	_, err = vkw.vk.PhotosSave(params)
 	return err
 }
 
