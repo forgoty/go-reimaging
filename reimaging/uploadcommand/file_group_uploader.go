@@ -77,8 +77,13 @@ func (f *FileGroupUploader) uploadGroup(group []string, uploadServer string) (*h
 func (f *FileGroupUploader) writeError(err error, group []string) {
 	if err != nil {
 		fmt.Println()
-		fmt.Printf("File Upload Failed for %v", group)
+		fmt.Printf("File Upload Failed for group:")
+		fmt.Println()
+		for _, path := range group {
+			fmt.Println(path)
+		}
 		fmt.Println(err)
+		fmt.Println()
 	}
 	f.errorChannel <- err
 }
