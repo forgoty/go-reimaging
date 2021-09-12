@@ -10,32 +10,33 @@ import (
 	"strings"
 	"time"
 
-	progressbar "github.com/schollz/progressbar/v3"
+	"github.com/forgoty/go-reimaging/reimaging/progressbar"
 	vkw "github.com/forgoty/go-reimaging/reimaging/vkwrapper"
 )
+
 type downloadOptions struct {
-	UserID int
+	UserID       int
 	DownloadPath string
-	NeedSystem bool
+	NeedSystem   bool
 }
 
 func NewDownloadOptions(userID int, downloadPath string, needSystem bool) *downloadOptions {
 	return &downloadOptions{
-		UserID: userID,
+		UserID:       userID,
 		DownloadPath: downloadPath,
-		NeedSystem: needSystem,
+		NeedSystem:   needSystem,
 	}
 }
 
 type AlbumDownloader struct {
 	vkWrapper vkw.VKWrapper
-	options *downloadOptions
+	options   *downloadOptions
 }
 
 func NewAlbumDownloader(vk vkw.VKWrapper, options *downloadOptions) *AlbumDownloader {
 	return &AlbumDownloader{
 		vkWrapper: vk,
-		options: options,
+		options:   options,
 	}
 }
 
@@ -104,7 +105,7 @@ func downloadPhotos(photosUrls []string, pathDir, albumTitle string) {
 		go downloadPhoto(metaImage, done, errch)
 	}
 
-	bar := getProgressBar(int64(photosCount), albumTitle)
+	bar := progressbar.NewProgressBar(photosCount, albumTitle)
 	for i := 0; i < photosCount; i++ {
 		if ok := <-done; !ok {
 			if err := <-errch; err != nil {
@@ -129,7 +130,7 @@ func getPhotoMetaData(url, pathDir string) metaDownloadedPhoto {
 	return metaDownloadedPhoto{url: url, filename: filename, path: path}
 }
 
-func getFileName(url string) string{
+func getFileName(url string) string {
 	split := strings.Split(url, "/")
 	filename := strings.ReplaceAll(split[len(split)-1], "-", "")
 	if index := strings.Index(filename, "?"); index > 0 {
@@ -179,9 +180,9 @@ func downloadPhoto(metaImage metaDownloadedPhoto, done chan bool, errch chan err
 
 func getWithRetry(url string) (*http.Response, error) {
 	var (
-		err error
+		err      error
 		response *http.Response
-		retries int = 3
+		retries  int = 3
 	)
 	for retries > 0 {
 		response, err = http.Get(url)
@@ -193,24 +194,4 @@ func getWithRetry(url string) (*http.Response, error) {
 		}
 	}
 	return response, err
-}
-
-func getProgressBar(max int64, title string) *progressbar.ProgressBar {
-	theme := progressbar.Theme{
-		Saucer: "=",
-		SaucerHead: ">",
-		SaucerPadding: " ",
-		BarStart: "[",
-		BarEnd: "]",
-	}
-	return progressbar.NewOptions64(
-		max,
-		progressbar.OptionShowIts(),
-		progressbar.OptionSetItsString("photos"),
-		progressbar.OptionSetDescription(title),
-		progressbar.OptionSetPredictTime(true),
-		progressbar.OptionShowCount(),
-		progressbar.OptionSetTheme(theme),
-	)
-
 }

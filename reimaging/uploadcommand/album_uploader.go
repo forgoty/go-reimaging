@@ -29,6 +29,10 @@ func (au *AlbumUploader) Upload(albumId int, filepath, title string) {
 	client := http.Client{}
 	semaphoreChan := getSemaphoreChannel(lenFiles)
 	errCh := make(chan error)
+	defer func() {
+		close(semaphoreChan)
+		close(errCh)
+	}()
 
 	bar := progressbar.NewProgressBar(lenFiles, title)
 	for _, group := range fileGroups {
