@@ -33,18 +33,18 @@ func (f *FileGroupUploader) Upload(group []string, uploadServer string, albumId 
 
 	res, err := f.uploadGroup(group, uploadServer)
 	if err != nil {
-		f.writeOutput(err)
+		f.writeError(err, group)
 		return
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
-		f.writeOutput(fmt.Errorf("bad status: %s", res.Status))
+		f.writeError(fmt.Errorf("bad status: %s", res.Status), group)
 		return
 	}
 
 	body, _ := io.ReadAll(res.Body)
 	err = f.vkWrapper.PhotosSave(body, albumId)
-	f.writeOutput(err)
+	f.writeError(err, group)
 }
 
 func (f *FileGroupUploader) semaphoreAcquire() {
@@ -74,9 +74,10 @@ func (f *FileGroupUploader) uploadGroup(group []string, uploadServer string) (*h
 	return f.client.Do(req)
 }
 
-func (f *FileGroupUploader) writeOutput(err error) {
+func (f *FileGroupUploader) writeError(err error, group []string) {
 	if err != nil {
 		fmt.Println()
+		fmt.Printf("File Upload Failed for %v", group)
 		fmt.Println(err)
 	}
 	f.errorChannel <- err
