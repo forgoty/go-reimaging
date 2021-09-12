@@ -36,7 +36,7 @@ func init() {
 
 func list(args []string) {
 	userID, _ := strconv.Atoi(args[0])
-	albums := vkw.NewVKWrapper(userID).GetAlbums(System)
+	albums := vkw.NewVKWrapper().GetAlbums(userID, System)
 
 	for _, album := range albums {
 		fmt.Printf("%s(%d) - id:%d\n", album.Title, album.Size, album.ID)

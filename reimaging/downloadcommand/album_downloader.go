@@ -10,26 +10,38 @@ import (
 	"strings"
 	"time"
 
-	progressbar "github.com/schollz/progressbar/v3"
+	"github.com/forgoty/go-reimaging/reimaging/progressbar"
 	vkw "github.com/forgoty/go-reimaging/reimaging/vkwrapper"
 )
 
-type AlbumDownloader struct {
-	VKWrapper *vkw.VKWrapper
+type downloadOptions struct {
+	UserID       int
 	DownloadPath string
-	NeedSystem bool
+	NeedSystem   bool
 }
 
-func NewAlbumDownloader(userID int, downloadPath string, needSystem bool) *AlbumDownloader {
-	return &AlbumDownloader{
-		VKWrapper: vkw.NewVKWrapper(userID),
+func NewDownloadOptions(userID int, downloadPath string, needSystem bool) *downloadOptions {
+	return &downloadOptions{
+		UserID:       userID,
 		DownloadPath: downloadPath,
-		NeedSystem: needSystem,
+		NeedSystem:   needSystem,
+	}
+}
+
+type AlbumDownloader struct {
+	vkWrapper vkw.VKWrapper
+	options   *downloadOptions
+}
+
+func NewAlbumDownloader(vk vkw.VKWrapper, options *downloadOptions) *AlbumDownloader {
+	return &AlbumDownloader{
+		vkWrapper: vk,
+		options:   options,
 	}
 }
 
 func (ad *AlbumDownloader) DownloadAlbumByID(albumID int) {
-	albums := ad.VKWrapper.GetAlbums(ad.NeedSystem)
+	albums := ad.vkWrapper.GetAlbums(ad.options.UserID, ad.options.NeedSystem)
 	for _, album := range albums {
 		if album.ID == albumID {
 			ad.DownloadAlbum(album)
@@ -38,7 +50,7 @@ func (ad *AlbumDownloader) DownloadAlbumByID(albumID int) {
 }
 
 func (ad *AlbumDownloader) DownloadAll() {
-	albums := ad.VKWrapper.GetAlbums(ad.NeedSystem)
+	albums := ad.vkWrapper.GetAlbums(ad.options.UserID, ad.options.NeedSystem)
 	for _, album := range albums {
 		ad.DownloadAlbum(album)
 	}
@@ -48,10 +60,10 @@ func (ad *AlbumDownloader) DownloadAlbum(album vkw.PhotoAlbum) {
 	offsets := getOffset(album.Size)
 	photosUrls := []string{}
 	for _, offset := range offsets {
-		photosUrls = append(photosUrls, ad.VKWrapper.GetPhotoURLs(album, offset)...)
+		photosUrls = append(photosUrls, ad.vkWrapper.GetPhotoURLs(album, offset)...)
 	}
 	if len(photosUrls) > 0 {
-		pathDir := createAlbumDir(ad.DownloadPath, album.Title)
+		pathDir := createAlbumDir(ad.options.DownloadPath, album.Title)
 		downloadPhotos(photosUrls, pathDir, album.Title)
 	}
 }
@@ -93,7 +105,7 @@ func downloadPhotos(photosUrls []string, pathDir, albumTitle string) {
 		go downloadPhoto(metaImage, done, errch)
 	}
 
-	bar := getProgressBar(int64(photosCount), albumTitle)
+	bar := progressbar.NewProgressBar(photosCount, albumTitle)
 	for i := 0; i < photosCount; i++ {
 		if ok := <-done; !ok {
 			if err := <-errch; err != nil {
@@ -118,7 +130,7 @@ func getPhotoMetaData(url, pathDir string) metaDownloadedPhoto {
 	return metaDownloadedPhoto{url: url, filename: filename, path: path}
 }
 
-func getFileName(url string) string{
+func getFileName(url string) string {
 	split := strings.Split(url, "/")
 	filename := strings.ReplaceAll(split[len(split)-1], "-", "")
 	if index := strings.Index(filename, "?"); index > 0 {
@@ -168,9 +180,9 @@ func downloadPhoto(metaImage metaDownloadedPhoto, done chan bool, errch chan err
 
 func getWithRetry(url string) (*http.Response, error) {
 	var (
-		err error
+		err      error
 		response *http.Response
-		retries int = 3
+		retries  int = 3
 	)
 	for retries > 0 {
 		response, err = http.Get(url)
@@ -182,24 +194,4 @@ func getWithRetry(url string) (*http.Response, error) {
 		}
 	}
 	return response, err
-}
-
-func getProgressBar(max int64, title string) *progressbar.ProgressBar {
-	theme := progressbar.Theme{
-		Saucer: "=",
-		SaucerHead: ">",
-		SaucerPadding: " ",
-		BarStart: "[",
-		BarEnd: "]",
-	}
-	return progressbar.NewOptions64(
-		max,
-		progressbar.OptionShowIts(),
-		progressbar.OptionSetItsString("photos"),
-		progressbar.OptionSetDescription(title),
-		progressbar.OptionSetPredictTime(true),
-		progressbar.OptionShowCount(),
-		progressbar.OptionSetTheme(theme),
-	)
-
 }

@@ -7,7 +7,10 @@ import (
 	"strconv"
 
 	"github.com/spf13/cobra"
+
 	"github.com/forgoty/go-reimaging/reimaging/downloadcommand"
+	"github.com/forgoty/go-reimaging/reimaging/validator"
+	vkw "github.com/forgoty/go-reimaging/reimaging/vkwrapper"
 )
 
 var downloadCmd = &cobra.Command{
@@ -39,18 +42,40 @@ func init() {
 	downloadCmd.Flags().IntVarP(&AlbumID, "album-id", "", 0, "Use specific album ID to download")
 	downloadCmd.Flags().StringVarP(&path, "path", "p", "", "Set Download Folder")
 }
-func download(args []string) {
-	userID, _ := strconv.Atoi(args[0])
 
-	_, error := validateDownloadDir(path)
-	if error != nil {
-		fmt.Println(error)
-		os.Exit(1)
-	}
-	albumDownloader := downloadcommand.NewAlbumDownloader(userID, path, System)
+func download(args []string) {
+	validateDownloadDirictory()
+	albumDownloader := getAlbumDownloader(parseUserID(args[0]))
+
 	if AlbumID != 0 {
 		albumDownloader.DownloadAlbumByID(AlbumID)
 	} else {
 		albumDownloader.DownloadAll()
 	}
+}
+
+func validateDownloadDirictory() {
+	_, error := validator.ValidateDownloadDir(path)
+	if error != nil {
+		exitWithErrorMessage(error)
+	}
+}
+
+func parseUserID(rawUserID string) int{
+	userID, err := strconv.Atoi(rawUserID)
+	if err != nil {
+		exitWithErrorMessage(err)
+	}
+	return userID
+}
+
+func exitWithErrorMessage(err error){
+	fmt.Println(err)
+	os.Exit(1)
+}
+
+func getAlbumDownloader(userID int) *downloadcommand.AlbumDownloader {
+	vkWrapper := vkw.NewVKWrapper()
+	options := downloadcommand.NewDownloadOptions(userID, path, System)
+	return downloadcommand.NewAlbumDownloader(vkWrapper, options)
 }
