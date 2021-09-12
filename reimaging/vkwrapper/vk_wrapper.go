@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"time"
 
 	"github.com/SevereCloud/vksdk/v2/api"
 	"github.com/SevereCloud/vksdk/v2/api/params"
@@ -190,7 +189,6 @@ func (vkw *VkAPIWrapper) UploadFileGroup(client *http.Client, group []string, up
 		return
 	}
 
-	time.Sleep(100 * time.Millisecond)
 	_, err = vkw.vk.PhotosSave(api.Params{
 		"server":      handler.Server,
 		"photos_list": handler.PhotosList,
@@ -198,7 +196,6 @@ func (vkw *VkAPIWrapper) UploadFileGroup(client *http.Client, group []string, up
 		"hash":        handler.Hash,
 		"album_id":    albumId,
 	})
-	time.Sleep(100 * time.Millisecond)
 	<-semCh
 	errCh <- err
 }

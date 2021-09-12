@@ -39,7 +39,7 @@ func (au *AlbumUploader) Upload(albumId int, filepath, title string) {
 	uploadServer := au.vkWrapper.GetUploadServer(albumId)
 	fileGroups := au.createFileGroups(files)
 	client := http.Client{}
-	semaphoreChan := make(chan struct{}, 50)
+	semaphoreChan := make(chan struct{}, calculateSemaphoreCount(lenFiles))
 	errCh := make(chan error)
 	var results []error
 
@@ -74,6 +74,13 @@ func calculateAdd(current, max int) int {
 		return max - current
 	}
 	return FilesInPostRequest
+}
+
+func calculateSemaphoreCount(filesLen int) int {
+	if filesLen < 490 {
+		return 25
+	}
+	return 3
 }
 
 func filterNotNils(results []error) []error {
