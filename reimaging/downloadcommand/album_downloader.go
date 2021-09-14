@@ -2,13 +2,11 @@ package downloadcommand
 
 import (
 	"fmt"
-	"io"
 	"math"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/forgoty/go-reimaging/reimaging/progressbar"
 	vkw "github.com/forgoty/go-reimaging/reimaging/vkwrapper"
@@ -57,6 +55,9 @@ func (ad *AlbumDownloader) DownloadAll() {
 }
 
 func (ad *AlbumDownloader) DownloadAlbum(album vkw.PhotoAlbum) {
+	if album.Size > 1000 {
+		fmt.Println("Calculating urls...")
+	}
 	offsets := getOffset(album.Size)
 	photosUrls := []string{}
 	for _, offset := range offsets {
@@ -93,29 +94,22 @@ func createAlbumDir(path, title string) string {
 
 func downloadPhotos(photosUrls []string, pathDir, albumTitle string) {
 	photosCount := len(photosUrls)
-
-	done := make(chan bool, 1)
-	defer close(done)
-
-	errch := make(chan error, 1)
-	defer close(errch)
+	client := http.Client{}
+	semaphoreChan := make(chan struct{}, 200)
+	errCh := make(chan error)
+	defer func() {
+		close(semaphoreChan)
+		close(errCh)
+	}()
 
 	for _, url := range photosUrls {
 		metaImage := getPhotoMetaData(url, pathDir)
-		go downloadPhoto(metaImage, done, errch)
+		photoDownloader := NewPhotoDownloader(&client, semaphoreChan, errCh)
+		go photoDownloader.Download(metaImage.url, metaImage.filename, metaImage.path)
 	}
 
 	bar := progressbar.NewProgressBar(photosCount, albumTitle)
-	for i := 0; i < photosCount; i++ {
-		if ok := <-done; !ok {
-			if err := <-errch; err != nil {
-				fmt.Println(err)
-			}
-		} else {
-			<-errch
-		}
-		bar.Add(1)
-	}
+	waitDownload(errCh, bar, photosCount)
 }
 
 type metaDownloadedPhoto struct {
@@ -139,59 +133,25 @@ func getFileName(url string) string {
 	return filename
 }
 
-func downloadPhoto(metaImage metaDownloadedPhoto, done chan bool, errch chan error) {
-	_, err := os.Stat(metaImage.path)
-	if err == nil {
-		// file exists
-		done <- true
-		errch <- nil
-		return
-	}
-
-	response, err := getWithRetry(metaImage.url)
-	if response != nil {
-		defer response.Body.Close()
-	}
-	if err != nil {
-		errch <- err
-		done <- false
-		return
-	}
-
-	output, err := os.Create(metaImage.path)
-	if output != nil {
-		defer output.Close()
-	}
-	if err != nil {
-		errch <- err
-		done <- false
-		return
-	}
-	_, err = io.Copy(output, response.Body)
-	if err != nil {
-		errch <- err
-		done <- false
-		return
-	}
-	errch <- nil
-	done <- true
-	return
-}
-
-func getWithRetry(url string) (*http.Response, error) {
-	var (
-		err      error
-		response *http.Response
-		retries  int = 3
-	)
-	for retries > 0 {
-		response, err = http.Get(url)
+func waitDownload(errCh chan error, bar progressbar.ProgressBarHandler, total int) {
+	var results []error
+	var errors []error
+	for {
+		err := <-errCh
 		if err != nil {
-			retries -= 1
-			time.Sleep(5 * time.Millisecond)
-		} else {
+			errors = append(errors, err)
+			if len(errors) > 3 {
+				bar.Finish()
+				fmt.Println()
+				fmt.Println("Too many errors occured recently")
+				os.Exit(1)
+			}
+		}
+		bar.Add(1)
+		results = append(results, err)
+		if len(results) == total {
+			bar.Finish()
 			break
 		}
 	}
-	return response, err
 }
