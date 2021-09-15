@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/forgoty/go-reimaging/reimaging/progressbar"
 	vkw "github.com/forgoty/go-reimaging/reimaging/vkwrapper"
@@ -55,18 +56,37 @@ func (ad *AlbumDownloader) DownloadAll() {
 }
 
 func (ad *AlbumDownloader) DownloadAlbum(album vkw.PhotoAlbum) {
+	urls := ad.getUrls(album)
+	if len(urls) > 0 {
+		pathDir := createAlbumDir(ad.options.DownloadPath, album.Title)
+		downloadPhotos(urls, pathDir, album.Title)
+	}
+}
+
+func (ad *AlbumDownloader) getUrls(album vkw.PhotoAlbum) []string {
+	offsets := getOffset(album.Size)
+	lenOffsets := len(offsets)
+	photosUrls := []string{}
+	var wg sync.WaitGroup
+	wg.Add(lenOffsets)
+	queue := make(chan []string, lenOffsets)
+
 	if album.Size > 1000 {
 		fmt.Println("Calculating urls...")
 	}
-	offsets := getOffset(album.Size)
-	photosUrls := []string{}
 	for _, offset := range offsets {
-		photosUrls = append(photosUrls, ad.vkWrapper.GetPhotoURLs(album, offset)...)
+		go func(offsetNumber int) {
+			queue <- ad.vkWrapper.GetPhotoURLs(album, offsetNumber)
+		}(offset)
 	}
-	if len(photosUrls) > 0 {
-		pathDir := createAlbumDir(ad.options.DownloadPath, album.Title)
-		downloadPhotos(photosUrls, pathDir, album.Title)
-	}
+	go func() {
+		for urls := range queue {
+			photosUrls = append(photosUrls, urls...)
+			wg.Done()
+		}
+	}()
+	wg.Wait()
+	return photosUrls
 }
 
 func getOffset(size int) []int {
