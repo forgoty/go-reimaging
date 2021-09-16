@@ -2,12 +2,10 @@ package downloadcommand
 
 import (
 	"fmt"
-	"math"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 
 	"github.com/forgoty/go-reimaging/reimaging/progressbar"
 	vkw "github.com/forgoty/go-reimaging/reimaging/vkwrapper"
@@ -56,58 +54,23 @@ func (ad *AlbumDownloader) DownloadAll() {
 }
 
 func (ad *AlbumDownloader) DownloadAlbum(album vkw.PhotoAlbum) {
-	urls := ad.getUrls(album)
-	if len(urls) > 0 {
-		pathDir := createAlbumDir(ad.options.DownloadPath, album.Title)
-		downloadPhotos(urls, pathDir, album.Title)
+	urlCalculator := NewUrlCalculator(ad.vkWrapper)
+	urls := urlCalculator.Calculate(album)
+	if len(urls) == 0 {
+		return
 	}
-}
-
-func (ad *AlbumDownloader) getUrls(album vkw.PhotoAlbum) []string {
-	offsets := getOffset(album.Size)
-	lenOffsets := len(offsets)
-	photosUrls := []string{}
-	var wg sync.WaitGroup
-	wg.Add(lenOffsets)
-	queue := make(chan []string, lenOffsets)
-
-	if album.Size > 1000 {
-		fmt.Println("Calculating urls...")
-	}
-	for _, offset := range offsets {
-		go func(offsetNumber int) {
-			queue <- ad.vkWrapper.GetPhotoURLs(album, offsetNumber)
-		}(offset)
-	}
-	go func() {
-		for urls := range queue {
-			photosUrls = append(photosUrls, urls...)
-			wg.Done()
-		}
-	}()
-	wg.Wait()
-	return photosUrls
-}
-
-func getOffset(size int) []int {
-	var maxCount int = 1000
-	d := float64(size) / float64(maxCount)
-	offset := int(math.Ceil(d))
-
-	offsets := make([]int, offset)
-
-	buf := 0
-	for i := 0; i < offset; i++ {
-		offsets[i] = buf
-		buf += maxCount
-	}
-	return offsets
+	pathDir := createAlbumDir(ad.options.DownloadPath, album.Title)
+	downloadPhotos(urls, pathDir, album.Title)
 }
 
 func createAlbumDir(path, title string) string {
 	pathDir := filepath.Join(path, title)
-	if _, serr := os.Stat(pathDir); serr != nil {
-		os.MkdirAll(pathDir, os.ModePerm)
+	if _, err := os.Stat(pathDir); os.IsNotExist(err) {
+		if err = os.MkdirAll(pathDir, os.ModePerm); err != nil {
+			fmt.Printf("Cannot create a folder %s: %s", pathDir, err)
+			fmt.Println()
+			os.Exit(1)
+		}
 	}
 	return pathDir
 }
@@ -161,16 +124,25 @@ func waitDownload(errCh chan error, bar progressbar.ProgressBarHandler, total in
 		if err != nil {
 			errors = append(errors, err)
 			if len(errors) > 3 {
-				bar.Finish()
+				err = bar.Finish()
+				if err != nil {
+					fmt.Println(err)
+				}
 				fmt.Println()
 				fmt.Println("Too many errors occured recently")
 				os.Exit(1)
 			}
 		}
-		bar.Add(1)
+		err = bar.Add(1)
+		if err != nil {
+			fmt.Println(err)
+		}
 		results = append(results, err)
 		if len(results) == total {
-			bar.Finish()
+			err = bar.Finish()
+			if err != nil {
+				fmt.Println(err)
+			}
 			break
 		}
 	}

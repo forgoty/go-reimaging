@@ -49,29 +49,26 @@ func download(args []string) {
 
 	if AlbumID != 0 {
 		albumDownloader.DownloadAlbumByID(AlbumID)
-	} else {
-		albumDownloader.DownloadAll()
+		return
 	}
+	albumDownloader.DownloadAll()
 }
 
 func validateDownloadDirictory() {
-	_, error := validator.ValidateDownloadDir(path)
-	if error != nil {
-		exitWithErrorMessage(error)
+	_, err := validator.ValidateDownloadDir(path)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
 	}
 }
 
-func parseUserID(rawUserID string) int{
+func parseUserID(rawUserID string) int {
 	userID, err := strconv.Atoi(rawUserID)
 	if err != nil {
-		exitWithErrorMessage(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 	return userID
-}
-
-func exitWithErrorMessage(err error){
-	fmt.Println(err)
-	os.Exit(1)
 }
 
 func getAlbumDownloader(userID int) *downloadcommand.AlbumDownloader {

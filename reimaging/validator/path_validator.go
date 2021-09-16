@@ -27,9 +27,9 @@ func validatePath(path string) (string, error) {
 func getAbsPath(path string) string {
 	if path == "" {
 		path, _ = os.Getwd()
-	} else {
-		path, _ = filepath.Abs(path)
+		return path
 	}
+	path, _ = filepath.Abs(path)
 	return path
 }
 
