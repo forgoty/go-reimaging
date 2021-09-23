@@ -69,20 +69,14 @@ func (d *photoDownloader) semaphoreRelease() {
 }
 
 func (d *photoDownloader) getWithRetry(req *http.Request) (*http.Response, error) {
-	var (
-		err      error = fmt.Errorf("Cannot download file for url: %s", req.URL)
-		response *http.Response
-		retries  int = 3
-	)
-	for retries > 0 {
-		response, err = d.client.Do(req)
+	for retries := 0; retries < 3; retries++ {
+		response, err := d.client.Do(req)
 		if err == nil && response.StatusCode == http.StatusOK {
-			break
+			return response, err
 		}
-		retries -= 1
 		time.Sleep(5 * time.Millisecond)
 	}
-	return response, err
+	return nil, fmt.Errorf("Cannot download file for url: %s", req.URL)
 }
 
 func (d *photoDownloader) writeError(err error) {

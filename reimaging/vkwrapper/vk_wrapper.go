@@ -103,9 +103,9 @@ func (vkw *VkAPIWrapper) CreateAlbum(title string) PhotoAlbum {
 	responseParams := params.NewPhotosCreateAlbumBuilder()
 	responseParams.Title(title)
 	responseParams.PrivacyView([]string{"only_me"})
-	rawAlbum, vkErr := vkw.vk.PhotosCreateAlbum(responseParams.Params)
-	if vkErr != nil {
-		fmt.Println(vkErr)
+	rawAlbum, err := vkw.vk.PhotosCreateAlbum(responseParams.Params)
+	if err != nil {
+		fmt.Println(err)
 		os.Exit(1)
 	}
 

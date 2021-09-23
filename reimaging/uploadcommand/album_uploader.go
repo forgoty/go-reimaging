@@ -72,19 +72,32 @@ func waitUpload(errCh chan error, bar progressbar.ProgressBarHandler, total int)
 	for {
 		err := <-errCh
 		if err != nil {
-			errors = append(errors, err)
-			if len(errors) > 3 {
-				bar.Finish()
-				fmt.Println()
-				fmt.Println("Too many errors occured recently")
-				os.Exit(1)
-			}
+			checkErrors(bar, errors, err)
 		}
-		bar.Add(FilesInPostRequest)
+		err = bar.Add(FilesInPostRequest)
+		if err != nil {
+			checkErrors(bar, errors, err)
+		}
 		results = append(results, err)
 		if len(results) == total {
-			bar.Finish()
+			err = bar.Finish()
+			if err != nil {
+				fmt.Println(err)
+			}
 			break
 		}
+	}
+}
+
+func checkErrors(bar progressbar.ProgressBarHandler, errors []error, err error) {
+	errors = append(errors, err)
+	if len(errors) > 3 {
+		err := bar.Finish()
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println()
+		fmt.Println("Too many errors occured recently")
+		os.Exit(1)
 	}
 }

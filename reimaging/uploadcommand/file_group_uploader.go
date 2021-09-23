@@ -58,16 +58,16 @@ func (f *FileGroupUploader) semaphoreRelease() {
 func (f *FileGroupUploader) uploadGroup(group []string, uploadServer string) (*http.Response, error) {
 	body := bytes.Buffer{}
 	writer := multipart.NewWriter(&body)
-	defer writer.Close()
 
 	err := prepareMultipartBody(group, writer, &body)
 	if err != nil {
-		return &http.Response{}, err
+		return nil, err
 	}
+	writer.Close()
 
 	req, err := http.NewRequest("POST", uploadServer, &body)
 	if err != nil {
-		return &http.Response{}, err
+		return nil, err
 	}
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 

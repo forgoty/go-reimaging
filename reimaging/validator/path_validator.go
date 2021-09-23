@@ -47,7 +47,7 @@ func ReadDir(root string) []string {
 	fileInfo, _ := ioutil.ReadDir(root)
 	for _, file := range fileInfo {
 		for _, ext := range extensions {
-			if strings.HasSuffix(file.Name(), ext) {
+			if strings.HasSuffix(strings.ToLower(file.Name()), ext) {
 				files = append(files, root+string(os.PathSeparator)+file.Name())
 			}
 		}
