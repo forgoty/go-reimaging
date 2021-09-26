@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/forgoty/go-reimaging/reimaging/progressbar"
-	vkw "github.com/forgoty/go-reimaging/reimaging/vkwrapper"
+	"github.com/forgoty/go-reimaging/pkg/reimaging/progressbar"
+	vkw "github.com/forgoty/go-reimaging/pkg/reimaging/vkwrapper"
 )
 
 type downloadOptions struct {

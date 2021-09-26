@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"os"
 
-	vkw "github.com/forgoty/go-reimaging/reimaging/vkwrapper"
+	vkw "github.com/forgoty/go-reimaging/pkg/reimaging/vkwrapper"
 )
 
 type FileGroupUploader struct {

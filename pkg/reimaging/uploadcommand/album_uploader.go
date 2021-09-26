@@ -2,9 +2,9 @@ package uploadcommand
 
 import (
 	"fmt"
-	"github.com/forgoty/go-reimaging/reimaging/progressbar"
-	"github.com/forgoty/go-reimaging/reimaging/validator"
-	vkw "github.com/forgoty/go-reimaging/reimaging/vkwrapper"
+	"github.com/forgoty/go-reimaging/pkg/reimaging/progressbar"
+	"github.com/forgoty/go-reimaging/pkg/reimaging/validator"
+	vkw "github.com/forgoty/go-reimaging/pkg/reimaging/vkwrapper"
 	"net/http"
 	"os"
 )

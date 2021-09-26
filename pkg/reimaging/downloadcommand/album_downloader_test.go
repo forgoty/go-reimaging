@@ -3,7 +3,7 @@ package downloadcommand
 import (
 	"testing"
 
-	vkw "github.com/forgoty/go-reimaging/reimaging/vkwrapper"
+	vkw "github.com/forgoty/go-reimaging/pkg/reimaging/vkwrapper"
 )
 
 func TestAlbumDownloaderDownloadAll(t *testing.T) {
@@ -35,4 +35,3 @@ func mockedDownloadPhoto(
 	done chan bool,
 	errch chan bool,
 ) {}
-

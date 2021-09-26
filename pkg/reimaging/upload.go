@@ -1,8 +1,8 @@
 package reimaging
 
 import (
-	"github.com/forgoty/go-reimaging/reimaging/uploadcommand"
-	vkw "github.com/forgoty/go-reimaging/reimaging/vkwrapper"
+	"github.com/forgoty/go-reimaging/pkg/reimaging/uploadcommand"
+	vkw "github.com/forgoty/go-reimaging/pkg/reimaging/vkwrapper"
 	"github.com/spf13/cobra"
 )
 

@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/spf13/cobra"
-	vkw "github.com/forgoty/go-reimaging/reimaging/vkwrapper"
+	vkw "github.com/forgoty/go-reimaging/pkg/reimaging/vkwrapper"
 )
 
 var listCmd = &cobra.Command{

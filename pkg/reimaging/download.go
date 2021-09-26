@@ -8,9 +8,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/forgoty/go-reimaging/reimaging/downloadcommand"
-	"github.com/forgoty/go-reimaging/reimaging/validator"
-	vkw "github.com/forgoty/go-reimaging/reimaging/vkwrapper"
+	"github.com/forgoty/go-reimaging/pkg/reimaging/downloadcommand"
+	"github.com/forgoty/go-reimaging/pkg/reimaging/validator"
+	vkw "github.com/forgoty/go-reimaging/pkg/reimaging/vkwrapper"
 )
 
 var downloadCmd = &cobra.Command{

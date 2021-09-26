@@ -2,7 +2,7 @@ package downloadcommand
 
 import (
 	"fmt"
-	vkw "github.com/forgoty/go-reimaging/reimaging/vkwrapper"
+	vkw "github.com/forgoty/go-reimaging/pkg/reimaging/vkwrapper"
 	"math"
 	"sync"
 )
