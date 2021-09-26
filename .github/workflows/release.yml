@@ -12,9 +12,9 @@ jobs:
       matrix:
         goos: [linux, windows, darwin]
         goarch: [amd64, arm, arm64]
-        include:
+        exclude:
           - goarch: arm
-            goos: linux
+            goos: darwin
     steps:
     - uses: actions/checkout@v2
     - uses: wangyoucao577/go-release-action@v1.20
